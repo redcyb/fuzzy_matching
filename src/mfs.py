@@ -10,78 +10,128 @@ import logging
 class MembershipFunctionTerm:
     form = None
 
-    def __init__(self, form):
+    def __init__(self, form: tuple):
+        """
+        :param form: tuple of number that describe shape of MF:
+        ex. (low, high) for SMF or (high, low) for ZMF
+        """
         self.form = form
+
+        self.validate()
 
     def __call__(self, val, *args, **kwargs):
         return self.get_value(val)
+
+    def validate(self):
+        raise NotImplementedError()
 
     def get_value(self, val):
         raise NotImplementedError()
 
 
 class SMF(MembershipFunctionTerm):
+    def validate(self):
+        left, right = self.form
+        assert isinstance(left, (int, float))
+        assert isinstance(right, (int, float))
+        assert left <= right
+
     def get_value(self, val):
-        a, b = self.form
-        a, b = max(a, 0), max(b, 0)
-        try:
-            return 0 if val <= a else 1 if val > b else ((val - a) / (b - a))
-        except ZeroDivisionError:
-            logging.exception("", extra={"value": val, "form": self.form, "class": type(self)})
+        assert isinstance(val, (int, float))
+
+        left, right = self.form
+
+        if left == right == val:
             return 0
+        if val <= left:
+            return 0
+        if val >= right:
+            return 1
+
+        return (val - left) / (right - left)
 
 
 class ZMF(MembershipFunctionTerm):
+    def validate(self):
+        left, right = self.form
+        assert isinstance(left, (int, float))
+        assert isinstance(right, (int, float))
+        assert left <= right
+
     def get_value(self, val):
-        a, b = self.form
-        a, b = max(a, 0), max(b, 0)
-        try:
-            return 1 if val < a else 0 if val >= b else ((b - val) / (b - a))
-        except ZeroDivisionError:
-            logging.exception("", extra={"value": val, "form": self.form, "class": type(self)})
+        assert isinstance(val, (int, float))
+
+        left, right = self.form
+
+        if left == right == val:
             return 0
+        if val <= left:
+            return 1
+        if val >= right:
+            return 0
+
+        return (right - val) / (right - left)
 
 
 class TrapezoidMF(MembershipFunctionTerm):
+    def validate(self):
+        left, left_top, right_top, right = self.form
+        assert isinstance(left, (int, float))
+        assert isinstance(right, (int, float))
+        assert isinstance(left_top, (int, float))
+        assert isinstance(right_top, (int, float))
+        assert left <= left_top <= right_top <= right
+
     def get_value(self, val):
-        a, b, c, d = self.form
-        a, b, c, d = max(a, 0), max(b, 0), max(c, 0), max(d, 0)
+        assert isinstance(val, (int, float))
 
-        if None in (val, a, b, c, d):
+        left, left_top, right_top, right = self.form
+
+        if left == left_top == right_top == right:
             return 0
 
-        try:
-            return (
-                0 if val <= a or val >= d else
-                1 if b < val < c else
-                ((val - a) / (b - a)) if val < b else
-                ((d - val) / (d - c))
-            )
-        except (ZeroDivisionError, TypeError):
-            logging.exception("", extra={"value": val, "form": self.form, "class": type(self)})
+        if val <= left or val >= right:
             return 0
+        if left_top <= val <= right_top:
+            return 1
+        if val < left_top:
+            return (val - left) / (left_top - left)
+
+        return (right - val) / (right - right_top)
 
 
 class TriangleMF(MembershipFunctionTerm):
+    def validate(self):
+        left, top, right = self.form
+        assert isinstance(left, (int, float))
+        assert isinstance(right, (int, float))
+        assert isinstance(top, (int, float))
+        assert left <= top <= right
+
     def get_value(self, val):
-        a, b, c = self.form
-        a, b, c = max(a, 0), max(b, 0), max(c, 0)
+        assert isinstance(val, (int, float))
 
-        if None in (val, a, b, c):
+        left, top, right = self.form
+
+        if left == top == right:
             return 0
 
-        try:
-            return (
-                0 if val <= a or val >= c else
-                ((val - a) / (b - a)) if val <= b else
-                ((c - val) / (c - b))
-            )
-        except ZeroDivisionError:
-            logging.exception("", extra={"value": val, "form": self.form, "class": type(self)})
+        if val <= left or val >= right:
             return 0
+        if val < top:
+            return (val - left) / (top - left)
+
+        return (right - val) / (right - top)
 
 
 class SingletonMF(MembershipFunctionTerm):
+    def validate(self):
+        single = self.form[0]
+        assert isinstance(single, (int, float))
+
     def get_value(self, val):
-        a = self.form[0]
-        return int(val == a)
+        assert isinstance(val, (int, float))
+
+        single = self.form[0]
+
+        return float(val == single)
