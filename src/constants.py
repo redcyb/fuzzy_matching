@@ -1,0 +1,2 @@
+DEFAULT_ABSOLUTE_FUZZINESS = (3, "absolute")
+DEFAULT_RELATIVE_FUZZINESS = (0.1, "relative")
