@@ -361,7 +361,7 @@ class LowToHighRangeCriteria(Criteria):
             if self.hard_edge in ("right", "both"):
                 high = highest
 
-            self.mem_func = mfs.ZMF([high, highest])
+            self.mem_func = mfs.ZMF((high, highest))
 
         # Only LOW
         elif {"low", "high"}.difference(b_val.keys()) == {"high"}:
@@ -373,7 +373,7 @@ class LowToHighRangeCriteria(Criteria):
             if self.hard_edge in ("left", "both"):
                 low = lowest
 
-            self.mem_func = mfs.SMF([lowest, low])
+            self.mem_func = mfs.SMF((lowest, low))
 
         # Both margins
         else:
@@ -393,7 +393,7 @@ class LowToHighRangeCriteria(Criteria):
             except TypeError:
                 self._match = -1
 
-            self.mem_func = mfs.TrapezoidMF([lowest, low, high, highest])
+            self.mem_func = mfs.TrapezoidMF((lowest, low, high, highest))
 
 
 class FromORUptoRangeCriteria(Criteria):
@@ -418,14 +418,14 @@ class FromORUptoRangeCriteria(Criteria):
 
             low = b_val
             lowest = low - get_shift_for_value(low, self.fuzziness)
-            self.mem_func = mfs.SMF([lowest, low])
+            self.mem_func = mfs.SMF((lowest, low))
 
         else:
             self._match = 1 if p_val <= b_val else -1
 
             high = b_val
             highest = high + get_shift_for_value(high, self.fuzziness)
-            self.mem_func = mfs.ZMF([high, highest])
+            self.mem_func = mfs.ZMF((high, highest))
 
 
 class AlmostNumberCriteria(Criteria):
@@ -447,11 +447,9 @@ class AlmostNumberCriteria(Criteria):
         if self.mem_func is not None:
             return
 
-        self.mem_func = mfs.TriangleMF([
-            b_val - get_shift_for_value(b_val, self.fuzziness),
-            b_val,
-            b_val + get_shift_for_value(b_val, self.fuzziness)
-        ])
+        self.mem_func = mfs.TriangleMF((b_val - get_shift_for_value(b_val, self.fuzziness),
+                                        b_val,
+                                        b_val + get_shift_for_value(b_val, self.fuzziness)))
 
 
 class OrConditionSuperCriteria(AbstractCriteria):
